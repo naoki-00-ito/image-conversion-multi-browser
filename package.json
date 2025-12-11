@@ -1,0 +1,19 @@
+{
+  "name": "image-conversion-multi-browser",
+  "version": "1.0.0",
+  "description": "マルチブラウザ対応用、画像圧縮&amp;拡張子変換",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/naoki-00-ito/image-conversion-multi-browser.git"
+  },
+  "author": "naoki-00-ito",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/naoki-00-ito/image-conversion-multi-browser/issues"
+  },
+  "homepage": "https://github.com/naoki-00-ito/image-conversion-multi-browser#readme"
+}
