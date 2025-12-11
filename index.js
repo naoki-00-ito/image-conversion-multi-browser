@@ -3,19 +3,35 @@ import path from 'path';
 import sharp from 'sharp';
 import 'dotenv/config';
 
-function convertImage(inputPath, outputDir, quality) {
+export async function convertImage(inputPath, outputDir, quality) {
+  console.log('🚀 画像変換を開始します...');
+  console.log(`入力ディレクトリ: ${inputPath}`);
+  console.log(`出力ディレクトリ: ${outputDir}`);
+  console.log(`品質設定: ${quality}%`);
+  console.log('');
+
+  let processedFiles = 0;
+  const results = [];
+
   // ディレクトリ内のすべてのファイルとディレクトリを処理
-  function processDirectory(currentInputPath, currentOutputPath) {
+  async function processDirectory(currentInputPath, currentOutputPath, relativePath = '') {
     const files = fs.readdirSync(currentInputPath);
+    const promises = [];
+
+    // ディレクトリを開始する時のメッセージ
+    if (relativePath) {
+      console.log(`📁 ディレクトリ処理中: ${relativePath}/`);
+    }
 
     for (const file of files) {
       const fullInputPath = path.join(currentInputPath, file);
       const stat = fs.statSync(fullInputPath);
+      const newRelativePath = relativePath ? path.join(relativePath, file) : file;
 
       if (stat.isDirectory()) {
         // サブディレクトリの場合、再帰的に処理
         const subOutputPath = path.join(currentOutputPath, file);
-        processDirectory(fullInputPath, subOutputPath);
+        promises.push(processDirectory(fullInputPath, subOutputPath, newRelativePath));
       } else {
         // ファイルの場合、画像変換を実行
         const ext = path.extname(file).toLowerCase();
@@ -26,6 +42,10 @@ function convertImage(inputPath, outputDir, quality) {
           continue;
         }
 
+        const displayPath = relativePath ? `${relativePath}/${file}` : file;
+        console.log(`📸 処理中: ${displayPath}`);
+        processedFiles++;
+
         // ファイル名をベースにしたサブディレクトリを作成
         const fileOutputDir = path.join(currentOutputPath, baseName);
         if (!fs.existsSync(fileOutputDir)) {
@@ -35,23 +55,85 @@ function convertImage(inputPath, outputDir, quality) {
         // 画像をSharpで読み込み
         const image = sharp(fullInputPath);
 
-        // 元の拡張子で出力（index.ext形式）
-        const outputOriginalPath = path.join(fileOutputDir, `index${ext}`);
-        image.toFile(outputOriginalPath);
-
-        // AVIF形式で保存
-        const outputAvifPath = path.join(fileOutputDir, 'index.avif');
-        image.avif({ quality: Number.parseInt(quality, 10) }).toFile(outputAvifPath);
-
-        // WebP形式で保存
-        const outputWebpPath = path.join(fileOutputDir, 'index.webp');
-        image.webp({ quality: Number.parseInt(quality, 10) }).toFile(outputWebpPath);
+        // 非同期でファイル変換を実行
+        promises.push(
+          Promise.all([
+            // 元の拡張子で出力（index.ext形式）
+            image.toFile(path.join(fileOutputDir, `index${ext}`)),
+            // AVIF形式で保存
+            image.avif({ quality: Number.parseInt(quality, 10) }).toFile(path.join(fileOutputDir, 'index.avif')),
+            // WebP形式で保存
+            image.webp({ quality: Number.parseInt(quality, 10) }).toFile(path.join(fileOutputDir, 'index.webp'))
+          ]).then((fileResults) => {
+            const result = {
+              originalFile: displayPath,
+              outputDir: baseName,
+              relativePath: relativePath,
+              formats: [
+                { format: ext.substring(1), path: path.join(fileOutputDir, `index${ext}`), size: fileResults[0].size },
+                { format: 'avif', path: path.join(fileOutputDir, 'index.avif'), size: fileResults[1].size },
+                { format: 'webp', path: path.join(fileOutputDir, 'index.webp'), size: fileResults[2].size }
+              ]
+            };
+            results.push(result);
+            console.log(`✅ 完了: ${displayPath} → ${relativePath ? `${relativePath}/` : ''}${baseName}/`);
+            return result;
+          })
+        );
       }
     }
+
+    await Promise.all(promises);
   }
 
   // 処理開始
-  processDirectory(inputPath, outputDir);
+  await processDirectory(inputPath, outputDir);
+
+  // 結果を表示
+  console.log('');
+  console.log('🎉 変換完了！');
+  console.log(`処理ファイル数: ${processedFiles}`);
+  console.log('');
+
+  if (results.length > 0) {
+    console.log('📊 変換結果:');
+    for (const result of results) {
+      console.log(`\n📁 ${result.originalFile} → ${result.outputDir}/`);
+      for (const format of result.formats) {
+        const sizeKB = (format.size / 1024).toFixed(1);
+        console.log(`   ${format.format.toUpperCase()}: ${sizeKB} KB`);
+      }
+    }
+
+    // ファイルサイズ比較
+    console.log('\n📈 圧縮率比較:');
+    for (const result of results) {
+      const original = result.formats[0];
+      const avif = result.formats[1];
+      const webp = result.formats[2];
+
+      const avifReduction = ((original.size - avif.size) / original.size * 100).toFixed(1);
+      const webpReduction = ((original.size - webp.size) / original.size * 100).toFixed(1);
+
+      console.log(`${result.outputDir}:`);
+      console.log(`   AVIF: -${avifReduction}% (${(avif.size / 1024).toFixed(1)} KB)`);
+      console.log(`   WebP: -${webpReduction}% (${(webp.size / 1024).toFixed(1)} KB)`);
+    }
+  }
+
+  return results;
 }
 
-convertImage(process.env.INPUT_DIR, process.env.OUTPUT_DIR, process.env.QUALITY);
+// テスト用のラッパー関数
+export async function convertImages(inputPath, outputDir, quality) {
+  const input = inputPath || process.env.INPUT_DIR;
+  const output = outputDir || process.env.OUTPUT_DIR;
+  const qual = quality || process.env.QUALITY;
+
+  return await convertImage(input, output, qual);
+}
+
+// 直接実行時のみ動作
+if (import.meta.url === `file://${process.argv[1]}`) {
+  convertImage(process.env.INPUT_DIR, process.env.OUTPUT_DIR, process.env.QUALITY);
+}

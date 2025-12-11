@@ -4,7 +4,8 @@
   "description": "マルチブラウザ対応用、画像圧縮&amp;拡張子変換",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "test": "vitest"
   },
   "repository": {
     "type": "git",
@@ -20,6 +21,8 @@
     "dotenv": "^17.2.3",
     "fs": "^0.0.1-security",
     "path": "^0.12.7",
-    "sharp": "^0.34.5"
+    "sharp": "^0.34.5",
+    "url": "^0.11.4",
+    "vitest": "^4.0.15"
   }
 }
