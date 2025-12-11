@@ -4,7 +4,7 @@
   "description": "マルチブラウザ対応用、画像圧縮&amp;拡張子変換",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node index.js"
   },
   "repository": {
     "type": "git",
@@ -15,5 +15,11 @@
   "bugs": {
     "url": "https://github.com/naoki-00-ito/image-conversion-multi-browser/issues"
   },
-  "homepage": "https://github.com/naoki-00-ito/image-conversion-multi-browser#readme"
+  "homepage": "https://github.com/naoki-00-ito/image-conversion-multi-browser#readme",
+  "dependencies": {
+    "dotenv": "^17.2.3",
+    "fs": "^0.0.1-security",
+    "path": "^0.12.7",
+    "sharp": "^0.34.5"
+  }
 }
