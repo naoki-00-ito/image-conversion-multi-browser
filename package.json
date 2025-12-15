@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
+    "mkdir": "npx dotenv-cli -- bash -c 'mkdir -p $INPUT_DIR $OUTPUT_DIR && echo \"Created directories: $INPUT_DIR, $OUTPUT_DIR\"'",
     "test": "vitest"
   },
   "repository": {
@@ -19,6 +20,7 @@
   "homepage": "https://github.com/naoki-00-ito/image-conversion-multi-browser#readme",
   "dependencies": {
     "dotenv": "^17.2.3",
+    "dotenv-cli": "^11.0.0",
     "fs": "^0.0.1-security",
     "path": "^0.12.7",
     "sharp": "^0.34.5",

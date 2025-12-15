@@ -26,6 +26,25 @@ cd image-conversion-multi-browser
 npm install
 ```
 
+## 構成
+
+```bash
+.
+├── ${INPUT_DIR}/    # 入力画像格納ディレクトリ
+      └── image.jpg
+├── ${OUTPUT_DIR}/   # 出力画像格納ディレクトリ
+      └── image/
+          ├── index.avif  # 変換後画像ファイル (AVIF形式)
+          ├── index.webp  # 変換後画像ファイル (WebP形式)
+          └── index.jpg   # 圧縮後画像ファイル (元の拡張子形式)
+├── .env.example     # 環境変数設定ファイルのサンプル
+├── index.js         # 画像圧縮&変換スクリプト
+└── index.test.js    # 画像圧縮&変換スクリプトのテストファイル
+```
+
+- `${INPUT_DIR}` : 入力画像ファイルを格納するディレクトリ名 (環境変数で設定)
+- `${OUTPUT_DIR}` : 出力画像ファイルを格納するディレクトリ名 (環境変数で設定)
+
 ## 使い方
 
 1. プロジェクトルートに `.env.example` をコピーして `.env` ファイルを作成する。
@@ -38,11 +57,17 @@ npm install
    - `INPUT_DIR` : 入力画像ファイルを格納するディレクトリ名
    - `OUTPUT_DIR` : 出力画像ファイルを格納するディレクトリ名
    - `QUALITY` : 画像圧縮品質 (1-100)
-2. `INPUT_DIR` に画像ファイルを配置する。
-3. 以下のコマンドを実行する。
+2. `INPUT_DIR` ``OUTPUT_DIR` ディレクトリを作成する。
+
+   ```bash
+   npm run mkdir
+   ```
+
+3. `INPUT_DIR` に画像ファイルを配置する。
+4. 以下のコマンドを実行する。
 
    ```bash
    npm start
    ```
 
-4. `OUTPUT_DIR` に圧縮・変換された画像ファイルが出力される。
+5. `OUTPUT_DIR` に圧縮・変換された画像ファイルが出力される。
