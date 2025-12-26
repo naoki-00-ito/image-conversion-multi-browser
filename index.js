@@ -3,11 +3,14 @@ import path from 'path';
 import sharp from 'sharp';
 import 'dotenv/config';
 
-export async function convertImage(inputPath, outputDir, quality) {
+export async function convertImage(inputPath, outputDir, quality, spImageWidth) {
   console.log('🚀 画像変換を開始します...');
   console.log(`入力ディレクトリ: ${inputPath}`);
   console.log(`出力ディレクトリ: ${outputDir}`);
   console.log(`品質設定: ${quality}%`);
+  if (spImageWidth) {
+    console.log(`スマホ用画像幅: ${spImageWidth}px`);
+  }
   console.log('');
 
   let processedFiles = 0;
@@ -54,26 +57,60 @@ export async function convertImage(inputPath, outputDir, quality) {
 
         // 画像をSharpで読み込み
         const image = sharp(fullInputPath);
+        const metadata = await image.metadata();
+
+        // 変換するフォーマットのリスト
+        const conversionPromises = [
+          // 元の拡張子で出力（index.ext形式）
+          image.toFile(path.join(fileOutputDir, `index${ext}`)),
+          // AVIF形式で保存
+          image.avif({ quality: Number.parseInt(quality, 10) }).toFile(path.join(fileOutputDir, 'index.avif')),
+          // WebP形式で保存
+          image.webp({ quality: Number.parseInt(quality, 10) }).toFile(path.join(fileOutputDir, 'index.webp'))
+        ];
+
+        const formatResults = [
+          { format: ext.substring(1), path: path.join(fileOutputDir, `index${ext}`) },
+          { format: 'avif', path: path.join(fileOutputDir, 'index.avif') },
+          { format: 'webp', path: path.join(fileOutputDir, 'index.webp') }
+        ];
+
+        // スマホ用画像を生成（SP_IMAGE_WIDTHが設定されていて、画像幅がSP_IMAGE_WIDTHより大きい場合のみ）
+        if (spImageWidth) {
+          const spWidth = Number.parseInt(spImageWidth, 10);
+          
+          // 画像の幅がSP_IMAGE_WIDTHより大きい場合のみスマホ用画像を生成
+          if (metadata.width && metadata.width > spWidth) {
+            const imageSp = sharp(fullInputPath).resize({ width: spWidth });
+            
+            conversionPromises.push(
+              // 元の拡張子で出力（index-sp.ext形式）
+              imageSp.clone().toFile(path.join(fileOutputDir, `index-sp${ext}`)),
+              // AVIF形式で保存
+              imageSp.clone().avif({ quality: Number.parseInt(quality, 10) }).toFile(path.join(fileOutputDir, 'index-sp.avif')),
+              // WebP形式で保存
+              imageSp.clone().webp({ quality: Number.parseInt(quality, 10) }).toFile(path.join(fileOutputDir, 'index-sp.webp'))
+            );
+
+            formatResults.push(
+              { format: `sp-${ext.substring(1)}`, path: path.join(fileOutputDir, `index-sp${ext}`) },
+              { format: 'sp-avif', path: path.join(fileOutputDir, 'index-sp.avif') },
+              { format: 'sp-webp', path: path.join(fileOutputDir, 'index-sp.webp') }
+            );
+          }
+        }
 
         // 非同期でファイル変換を実行
         promises.push(
-          Promise.all([
-            // 元の拡張子で出力（index.ext形式）
-            image.toFile(path.join(fileOutputDir, `index${ext}`)),
-            // AVIF形式で保存
-            image.avif({ quality: Number.parseInt(quality, 10) }).toFile(path.join(fileOutputDir, 'index.avif')),
-            // WebP形式で保存
-            image.webp({ quality: Number.parseInt(quality, 10) }).toFile(path.join(fileOutputDir, 'index.webp'))
-          ]).then((fileResults) => {
+          Promise.all(conversionPromises).then((fileResults) => {
             const result = {
               originalFile: displayPath,
               outputDir: baseName,
               relativePath: relativePath,
-              formats: [
-                { format: ext.substring(1), path: path.join(fileOutputDir, `index${ext}`), size: fileResults[0].size },
-                { format: 'avif', path: path.join(fileOutputDir, 'index.avif'), size: fileResults[1].size },
-                { format: 'webp', path: path.join(fileOutputDir, 'index.webp'), size: fileResults[2].size }
-              ]
+              formats: formatResults.map((format, index) => ({
+                ...format,
+                size: fileResults[index].size
+              }))
             };
             results.push(result);
             console.log(`✅ 完了: ${displayPath} → ${relativePath ? `${relativePath}/` : ''}${baseName}/`);
@@ -125,15 +162,16 @@ export async function convertImage(inputPath, outputDir, quality) {
 }
 
 // テスト用のラッパー関数
-export async function convertImages(inputPath, outputDir, quality) {
+export async function convertImages(inputPath, outputDir, quality, spImageWidth) {
   const input = inputPath || process.env.INPUT_DIR;
   const output = outputDir || process.env.OUTPUT_DIR;
   const qual = quality || process.env.QUALITY;
+  const spWidth = spImageWidth || process.env.SP_IMAGE_WIDTH;
 
-  return await convertImage(input, output, qual);
+  return await convertImage(input, output, qual, spWidth);
 }
 
 // 直接実行時のみ動作
 if (import.meta.url === `file://${process.argv[1]}`) {
-  convertImage(process.env.INPUT_DIR, process.env.OUTPUT_DIR, process.env.QUALITY);
+  convertImage(process.env.INPUT_DIR, process.env.OUTPUT_DIR, process.env.QUALITY, process.env.SP_IMAGE_WIDTH);
 }
