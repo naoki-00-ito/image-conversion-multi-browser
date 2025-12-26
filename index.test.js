@@ -50,4 +50,32 @@ describe("convertImages", () => {
     expect(fs.existsSync(path.join(imageDir, 'index.webp'))).toBe(true);
     expect(fs.existsSync(path.join(imageDir, 'index.avif'))).toBe(true);
   });
+
+  it("スマホ用画像の変換が正常に動作すること", async () => {
+    const testOutputDirSp = path.join(__dirname, 'test-output-sp');
+
+    await convertImages(testInputDir, testOutputDirSp, 70, 768);
+
+    // 出力ディレクトリが作成されているかチェック
+    expect(fs.existsSync(testOutputDirSp)).toBe(true);
+
+    // test-image ディレクトリが作成されているかチェック
+    const imageDir = path.join(testOutputDirSp, 'test-image');
+    expect(fs.existsSync(imageDir)).toBe(true);
+
+    // 通常の各形式のファイルが作成されているかチェック
+    expect(fs.existsSync(path.join(imageDir, 'index.png'))).toBe(true);
+    expect(fs.existsSync(path.join(imageDir, 'index.webp'))).toBe(true);
+    expect(fs.existsSync(path.join(imageDir, 'index.avif'))).toBe(true);
+
+    // スマホ用の各形式のファイルが作成されているかチェック
+    expect(fs.existsSync(path.join(imageDir, 'index-sp.png'))).toBe(true);
+    expect(fs.existsSync(path.join(imageDir, 'index-sp.webp'))).toBe(true);
+    expect(fs.existsSync(path.join(imageDir, 'index-sp.avif'))).toBe(true);
+
+    // クリーンアップ
+    if (fs.existsSync(testOutputDirSp)) {
+      fs.rmSync(testOutputDirSp, { recursive: true, force: true });
+    }
+  });
 });
