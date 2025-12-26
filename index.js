@@ -57,6 +57,7 @@ export async function convertImage(inputPath, outputDir, quality, spImageWidth) 
 
         // 画像をSharpで読み込み
         const image = sharp(fullInputPath);
+        const metadata = await image.metadata();
 
         // 変換するフォーマットのリスト
         const conversionPromises = [
@@ -74,25 +75,29 @@ export async function convertImage(inputPath, outputDir, quality, spImageWidth) 
           { format: 'webp', path: path.join(fileOutputDir, 'index.webp') }
         ];
 
-        // スマホ用画像を生成（SP_IMAGE_WIDTHが設定されている場合）
+        // スマホ用画像を生成（SP_IMAGE_WIDTHが設定されていて、画像幅がSP_IMAGE_WIDTHより大きい場合のみ）
         if (spImageWidth) {
           const spWidth = Number.parseInt(spImageWidth, 10);
-          const imageSp = sharp(fullInputPath).resize({ width: spWidth, withoutEnlargement: true });
           
-          conversionPromises.push(
-            // 元の拡張子で出力（index-sp.ext形式）
-            imageSp.clone().toFile(path.join(fileOutputDir, `index-sp${ext}`)),
-            // AVIF形式で保存
-            imageSp.clone().avif({ quality: Number.parseInt(quality, 10) }).toFile(path.join(fileOutputDir, 'index-sp.avif')),
-            // WebP形式で保存
-            imageSp.clone().webp({ quality: Number.parseInt(quality, 10) }).toFile(path.join(fileOutputDir, 'index-sp.webp'))
-          );
+          // 画像の幅がSP_IMAGE_WIDTHより大きい場合のみスマホ用画像を生成
+          if (metadata.width && metadata.width > spWidth) {
+            const imageSp = sharp(fullInputPath).resize({ width: spWidth });
+            
+            conversionPromises.push(
+              // 元の拡張子で出力（index-sp.ext形式）
+              imageSp.clone().toFile(path.join(fileOutputDir, `index-sp${ext}`)),
+              // AVIF形式で保存
+              imageSp.clone().avif({ quality: Number.parseInt(quality, 10) }).toFile(path.join(fileOutputDir, 'index-sp.avif')),
+              // WebP形式で保存
+              imageSp.clone().webp({ quality: Number.parseInt(quality, 10) }).toFile(path.join(fileOutputDir, 'index-sp.webp'))
+            );
 
-          formatResults.push(
-            { format: `sp-${ext.substring(1)}`, path: path.join(fileOutputDir, `index-sp${ext}`) },
-            { format: 'sp-avif', path: path.join(fileOutputDir, 'index-sp.avif') },
-            { format: 'sp-webp', path: path.join(fileOutputDir, 'index-sp.webp') }
-          );
+            formatResults.push(
+              { format: `sp-${ext.substring(1)}`, path: path.join(fileOutputDir, `index-sp${ext}`) },
+              { format: 'sp-avif', path: path.join(fileOutputDir, 'index-sp.avif') },
+              { format: 'sp-webp', path: path.join(fileOutputDir, 'index-sp.webp') }
+            );
+          }
         }
 
         // 非同期でファイル変換を実行
