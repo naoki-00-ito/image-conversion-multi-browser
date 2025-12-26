@@ -52,9 +52,9 @@ describe("convertImages", () => {
     expect(fs.existsSync(path.join(imageDir, 'index.avif'))).toBe(true);
   });
 
-  it("スマホ用画像の変換が正常に動作すること", async () => {
+  it("大きい画像でスマホ用画像が生成されること", async () => {
     const sharp = (await import('sharp')).default;
-    const testOutputDirSp = path.join(__dirname, 'test-output-sp');
+    const testOutputDirSp = path.join(__dirname, 'test-output-sp-large');
     const testLargeImagePath = path.join(testInputDir, 'test-large-image.png');
 
     // 1000x1000ピクセルの大きい画像を作成（SP_IMAGE_WIDTHより大きい）
@@ -80,6 +80,23 @@ describe("convertImages", () => {
     expect(fs.existsSync(path.join(largeImageDir, 'index-sp.webp'))).toBe(true);
     expect(fs.existsSync(path.join(largeImageDir, 'index-sp.avif'))).toBe(true);
 
+    // クリーンアップ
+    if (fs.existsSync(testOutputDirSp)) {
+      fs.rmSync(testOutputDirSp, { recursive: true, force: true });
+    }
+    if (fs.existsSync(testLargeImagePath)) {
+      fs.unlinkSync(testLargeImagePath);
+    }
+  });
+
+  it("小さい画像でスマホ用画像が生成されないこと", async () => {
+    const testOutputDirSp = path.join(__dirname, 'test-output-sp-small');
+
+    await convertImages(testInputDir, testOutputDirSp, 70, 768);
+
+    // 出力ディレクトリが作成されているかチェック
+    expect(fs.existsSync(testOutputDirSp)).toBe(true);
+
     // 小さい画像の場合：スマホ用画像は生成されない
     const smallImageDir = path.join(testOutputDirSp, 'test-image-small');
     expect(fs.existsSync(smallImageDir)).toBe(true);
@@ -91,9 +108,6 @@ describe("convertImages", () => {
     // クリーンアップ
     if (fs.existsSync(testOutputDirSp)) {
       fs.rmSync(testOutputDirSp, { recursive: true, force: true });
-    }
-    if (fs.existsSync(testLargeImagePath)) {
-      fs.unlinkSync(testLargeImagePath);
     }
   });
 });
