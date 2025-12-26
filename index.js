@@ -81,15 +81,11 @@ export async function convertImage(inputPath, outputDir, quality, spImageWidth) 
           
           conversionPromises.push(
             // 元の拡張子で出力（index-sp.ext形式）
-            imageSp.toFile(path.join(fileOutputDir, `index-sp${ext}`)),
+            imageSp.clone().toFile(path.join(fileOutputDir, `index-sp${ext}`)),
             // AVIF形式で保存
-            sharp(fullInputPath).resize({ width: spWidth, withoutEnlargement: true })
-              .avif({ quality: Number.parseInt(quality, 10) })
-              .toFile(path.join(fileOutputDir, 'index-sp.avif')),
+            imageSp.clone().avif({ quality: Number.parseInt(quality, 10) }).toFile(path.join(fileOutputDir, 'index-sp.avif')),
             // WebP形式で保存
-            sharp(fullInputPath).resize({ width: spWidth, withoutEnlargement: true })
-              .webp({ quality: Number.parseInt(quality, 10) })
-              .toFile(path.join(fileOutputDir, 'index-sp.webp'))
+            imageSp.clone().webp({ quality: Number.parseInt(quality, 10) }).toFile(path.join(fileOutputDir, 'index-sp.webp'))
           );
 
           formatResults.push(
