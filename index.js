@@ -37,8 +37,9 @@ export async function convertImage(inputPath, outputDir, quality, spImageWidth) 
         promises.push(processDirectory(fullInputPath, subOutputPath, newRelativePath));
       } else {
         // ファイルの場合、画像変換を実行
-        const ext = path.extname(file).toLowerCase();
-        const baseName = path.basename(file, ext);
+        const originalExt = path.extname(file); // 元の拡張子（大文字小文字そのまま）
+        const ext = originalExt.toLowerCase(); // 小文字化した拡張子
+        const baseName = path.basename(file, originalExt); // 元の拡張子で取り除く
 
         // 画像ファイルかチェック
         if (!['.jpg', '.jpeg', '.png', '.webp', '.avif', '.tiff', '.bmp'].includes(ext)) {
