@@ -110,4 +110,26 @@ describe("convertImages", () => {
       fs.rmSync(testOutputDirSp, { recursive: true, force: true });
     }
   });
+
+  it("接頭辞にアンスコを含むディレクトリがスキップされること", async () => {
+    const testOutputDirUnderscore = path.join(__dirname, 'test-output-underscore');
+    const underscoreDir = path.join(testInputDir, '_underscore_dir');
+    fs.mkdirSync(underscoreDir, { recursive: true });
+    fs.writeFileSync(path.join(underscoreDir, 'test-image.png'), Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+      'base64'
+    ));
+
+    await convertImages(testInputDir, testOutputDirUnderscore, 70);
+
+    // アンスコを含むディレクトリはスキップされるため、出力ディレクトリが作成されないことを確認
+    expect(fs.existsSync(testOutputDirUnderscore)).toBe(true);
+    const underscoreOutputDir = path.join(testOutputDirUnderscore, '_underscore_dir');
+    expect(fs.existsSync(underscoreOutputDir)).toBe(false);
+
+    // クリーンアップ
+    if (fs.existsSync(testOutputDirUnderscore)) {
+      fs.rmSync(testOutputDirUnderscore, { recursive: true, force: true });
+    }
+  });
 });
