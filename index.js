@@ -32,6 +32,12 @@ export async function convertImage(inputPath, outputDir, quality, spImageWidth) 
       const newRelativePath = relativePath ? path.join(relativePath, file) : file;
 
       if (stat.isDirectory()) {
+        // 接頭辞にアンスコを含むディレクトリは対象外にする
+        if (file.startsWith('_')) {
+          console.log(`⏭️ スキップ（アンスコありのディレクトリ）: ${newRelativePath}/`);
+          continue;
+        }
+
         // サブディレクトリの場合、再帰的に処理
         const subOutputPath = path.join(currentOutputPath, file);
         promises.push(processDirectory(fullInputPath, subOutputPath, newRelativePath));
